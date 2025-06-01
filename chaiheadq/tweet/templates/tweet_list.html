@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+
+{% block title %}
+chai aur tweet
+{% endblock %}
+
+{% block content %}
+
+<h1 class="text-center mt-4">Welcome to Ayesh's</h1>
+
+<a class="btn btn-primary mb-4" href="{% url 'tweet_create' %}">Create a Tweet</a>
+
+{% if query %}
+    <h5 class="mb-3">Search results for: <em>"{{ query }}"</em></h5>
+{% endif %}
+
+<div class="container row gap-3">
+    {% if tweets %}
+        {% for tweet in tweets %}
+        <div class="card" style="width: 18rem;">
+            {% if tweet.photo %}
+            <img src="{{ tweet.photo.url }}" class="card-img-top" alt="Tweet image">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ tweet.user.username }}</h5>
+                <p class="card-text">{{ tweet.text }}</p>
+
+                <!-- Like/Unlike button -->
+                <form method="POST" action="{% url 'tweet_like_toggle' tweet.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        {% if user in tweet.likes.all %}
+                            ❤️ Unlike
+                        {% else %}
+                            🤍 Like
+                        {% endif %}
+                    </button>
+                </form>
+                <span class="ms-2">{{ tweet.likes.count }} {{ tweet.likes.count|pluralize:"Like,Likes" }}</span>
+
+                <br><br>
+
+                {% if tweet.user == user %}
+                <a href="{% url 'tweet_edit' tweet.id %}" class="btn btn-primary">Edit</a>
+                <a href="{% url 'tweet_delete' tweet.id %}" class="btn btn-danger">Delete</a>
+                {% endif %}
+
+                <hr>
+
+                <!-- Comments Section -->
+                <h6>Comments ({{ tweet.comments.count }})</h6>
+                <div style="max-height: 150px; overflow-y: auto;">
+                    {% for comment in tweet.comments.all %}
+                        <div class="mb-2">
+                            <strong>{{ comment.user.username }}</strong>:
+                            <span>{{ comment.text }}</span>
+                            <br>
+                            <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No comments yet.</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Add Comment Form -->
+                {% if user.is_authenticated %}
+                <form method="POST" action="{% url 'add_comment' tweet.id %}">
+                    {% csrf_token %}
+                    <div class="input-group mt-2">
+                        <input type="text" name="text" class="form-control" placeholder="Add a comment..." required>
+                        <button class="btn btn-outline-primary" type="submit">Post</button>
+                    </div>
+                </form>
+                {% else %}
+                <p><a href="{% url 'login' %}">Login</a> to add a comment.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No tweets found{% if query %} for "<strong>{{ query }}</strong>"{% endif %}.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
